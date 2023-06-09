@@ -4,7 +4,7 @@ export class Token {
   private _created: string
 
   constructor(created: string, private _expires: string, private _value: string) {
-      if (moment(_expires).isAfter(moment(created))) {
+      if (moment(_expires).isBefore(moment(created))) {
           throw new Error('No se puede crear un token con un tiempo de expiracion menor al de creacion')
       }
       this._created = created

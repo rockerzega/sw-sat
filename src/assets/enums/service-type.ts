@@ -1,4 +1,4 @@
-import { Enum } from '@/src/assets/enum';
+import { Enum } from '@/src/assets/libs/enum'
 
 export type ServiceTypeValues = 'cfdi' | 'retenciones';
 

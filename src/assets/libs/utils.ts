@@ -1,16 +1,19 @@
 import Debug from 'debug'
-import { getParser } from '@nodecfdi/cfdiutils-common'
-import { Token } from './clases/token'
-import moment from 'moment'
+import { install } from '@nodecfdi/cfdiutils-common'
+import { DOMParser, XMLSerializer, DOMImplementation } from '@xmldom/xmldom';
+import { Token } from '../clases/token'
+import moment from 'dayjs'
 
 const debug = Debug('api:src:assets:utils')
+install(new DOMParser(), new XMLSerializer(), new DOMImplementation())
 
 function readXmlDocument(source: string): Document {
   if (source === '') {
       throw new Error('No se puede cargar un xml vacio')
   }
   debug('Obteniendo el documento')
-  return getParser().parseFromString(source, 'text/xml');
+  const parser = new DOMParser()
+  return parser.parseFromString(source, 'text/xml');
 }
 
 export function readXmlElement(source: string): Element {
@@ -46,7 +49,7 @@ function findElement(element: Element, ...names: string[]): Element | undefined 
       const localName = (child as Element).localName?.toLowerCase()
       if (localName === current) {
         if (names.length > 0) {
-          return this.findElement(child as Element, ...names)
+          return findElement(child as Element, ...names)
         } else {
           return child as Element
         }
@@ -60,7 +63,7 @@ function findElement(element: Element, ...names: string[]): Element | undefined 
 function findElements(element: Element, ...names: string[]): Element[] {
   const last = names.pop()
   const current = last ? last.toLowerCase() : ''
-  const tempElement = this.findElement(element, ...names)
+  const tempElement = findElement(element, ...names)
   if (!tempElement) {
       return []
   }
@@ -118,4 +121,36 @@ export function createTokenFromSoapResponse(content: string): Token {
   const value = findContent(env, 'body', 'autenticaResponse', 'autenticaResult')
 
   return new Token(created, expires, value);
+}
+
+export function parseXml(text: string): string {
+  return text
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;')
+}
+
+export function cleanPemContents(pemContents: string): string {
+  const filteredLines = pemContents.split('\n').filter((line: string): boolean => {
+      return line.indexOf('-----') !== 0
+  })
+
+  return filteredLines.map((line) => line.trim()).join('');
+}
+
+export function findAtrributes(element: Element, ...search: string[]): Record<string, string> {
+  const found = findElement(element, ...search);
+  if (!found) {
+      return {};
+  }
+  const attributes = new Map();
+  const elementAttributes = found.attributes;
+  let index = 0;
+  for (index; index < elementAttributes.length; index++) {
+      attributes.set(elementAttributes[index].localName.toLowerCase(), elementAttributes[index].value);
+  }
+
+  return Object.fromEntries(attributes);
 }
