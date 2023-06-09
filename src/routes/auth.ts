@@ -3,7 +3,6 @@ import { Credential } from '@nodecfdi/credentials'
 import { getAuthorizacion } from '../assets/libs/authorizacion'
 
 const router = new Router()
-let fiel:Credential
 
 router.post('', async (req, res) => {  
   try {
@@ -12,7 +11,7 @@ router.post('', async (req, res) => {
     const keyPath = req.files?.keyPEM.path
     const { password } = req.body
     
-    fiel = Credential.openFiles(certificatePath, keyPath, password)
+    const fiel: Credential = Credential.openFiles(certificatePath, keyPath, password)
     
     const respuesta = await getAuthorizacion(fiel)
 
@@ -23,4 +22,3 @@ router.post('', async (req, res) => {
 })
 
 export default router
-

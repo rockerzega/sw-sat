@@ -1,12 +1,12 @@
-import { Router } from 'restify-router'
-import { ServiceEndpoints } from '../assets/clases/serviceEndpoints'
-import { BadRequestError } from 'restify-errors'
-import { Credential, SignatureAlgorithm } from '@nodecfdi/credentials'
 import moment from 'moment'
-import { nospaces, parseXml, cleanPemContents, readXmlElement, findAtrributes } from '../assets/libs/utils'
 import { createHash } from 'crypto'
+import { Router } from 'restify-router'
+import { BadRequestError } from 'restify-errors'
 import { WCInterface } from '@/src/assets/interfaces/WCInterface'
+import { ServiceEndpoints } from '../assets/clases/serviceEndpoints'
+import { Credential, SignatureAlgorithm } from '@nodecfdi/credentials'
 import { ejecutar, getAuthorizacion } from '../assets/libs/authorizacion'
+import { nospaces, parseXml, cleanPemContents, readXmlElement, findAtrributes } from '../assets/libs/utils'
 
 const router = new Router()
 const endpoints = ServiceEndpoints.cfdi()
@@ -52,7 +52,6 @@ function queryBody (queryParameters): string {
           xmlRfcReceived = `<des:RfcReceptores>${xmlRfcReceived}</des:RfcReceptores>`;
       }
   }
-  console.log('Flag 1')
   const cleanedSolicitudAttributes = new Map();
   for (const [key, value] of solicitudAttributes) {
       if (value !== '') cleanedSolicitudAttributes.set(key, value);
@@ -64,7 +63,6 @@ function queryBody (queryParameters): string {
           return `${parseXml(name)}="${parseXml(value)}"`;
       })
       .join(' ')
-  console.log('Flag 2')
   const toDigestXml = `
       <des:SolicitaDescarga xmlns:des="http://DescargaMasivaTerceros.sat.gob.mx">
           <des:solicitud ${solicitudAttributesAsText}>
@@ -86,8 +84,7 @@ function queryBody (queryParameters): string {
           </s:Body>
       </s:Envelope>
   `
-      console.log('Flag 4')
-  return nospaces(xml);
+  return nospaces(xml)
 }
 
 function createQueryResultFromSoapResponse(content: string) {
@@ -95,7 +92,7 @@ function createQueryResultFromSoapResponse(content: string) {
 
   const values = findAtrributes(env, 'body', 'solicitaDescargaResponse', 'solicitaDescargaResult')
   const status = { code: Number(values.codestatus) ?? 0, message: values.mensaje ?? '' }
-  const requestId = values.idsolicitud ?? '';
+  const requestId = values.idsolicitud ?? ''
 
   return { status, requestId }
 }
@@ -127,11 +124,10 @@ function createSignature(toDigest: string, signedInfoUri = '', keyInfo = ''): st
   const signatureValue = Buffer.from(fiel.sign(signedInfo, SignatureAlgorithm.SHA1), 'hex').toString(
       'base64'
   )
-  console.log('Flag 3')
   signedInfo = signedInfo.replace('<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">', '<SignedInfo>')
 
   if (keyInfo === '') {
-    keyInfo = createKeyInfoData();
+    keyInfo = createKeyInfoData()
   }
 
   return `
@@ -146,8 +142,6 @@ function createSignature(toDigest: string, signedInfoUri = '', keyInfo = ''): st
 function createKeyInfoData(): string {
   const certificate = cleanPemContents(fiel.certificate().pem())
   const serial = fiel.certificate().serialNumber().decimal()
-  console.log('Flag 3/4')
-  console.log(fiel.certificate().issuerAsRfc4514())
   const issuerName = parseXml(fiel.certificate().issuerAsRfc4514())
 
   return `
@@ -175,7 +169,6 @@ async function query(parametros) {
         'El endpoit no es correcto para este peticion',
       )
   }
-  console.log('Se va a generar el token')
   const currentToken = (await getAuthorizacion(fiel)).getValue()
   const soapBody = queryBody(parametros)
   let wc: WCInterface
